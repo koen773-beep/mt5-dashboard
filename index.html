@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MT5 Dashboard</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 15px;
+    }
+
+    .card {
+      padding: 15px;
+      border-radius: 10px;
+      background: #1e293b;
+      text-align: center;
+    }
+
+    .long { border: 2px solid #22c55e; }
+    .short { border: 2px solid #ef4444; }
+    .mixed { border: 2px solid #64748b; }
+
+    .badge {
+      padding: 3px 6px;
+      margin: 2px;
+      border-radius: 5px;
+      font-size: 12px;
+      display: inline-block;
+    }
+
+    .buy { background: #22c55e; }
+    .sell { background: #ef4444; }
+    .neutral { background: #64748b; }
+  </style>
+</head>
+
+<body>
+
+<h1>📊 Forex Trend Dashboard</h1>
+<div class="grid" id="grid"></div>
+
+<script>
+function getClass(tf) {
+  if (tf === "LONG") return "buy";
+  if (tf === "SHORT") return "sell";
+  return "neutral";
+}
+
+function loadData() {
+  fetch("/api/signal")
+    .then(res => res.json())
+    .then(data => {
+
+      const grid = document.getElementById("grid");
+      grid.innerHTML = "";
+
+      Object.keys(data).forEach(symbol => {
+        const p = data[symbol];
+
+        let trendClass = "mixed";
+        let label = "MIXED";
+
+        if (p.TF1 === p.TF2 && p.TF2 === p.TF3) {
+          if (p.TF1 === "LONG") {
+            trendClass = "long";
+            label = "STRONG BUY";
+          } else {
+            trendClass = "short";
+            label = "STRONG SELL";
+          }
+        }
+
+        const card = document.createElement("div");
+        card.className = "card " + trendClass;
+
+        card.innerHTML = `
+          <b>${symbol}</b><br><br>
+
+          <span class="badge ${getClass(p.TF1)}">${p.TF1}</span>
+          <span class="badge ${getClass(p.TF2)}">${p.TF2}</span>
+          <span class="badge ${getClass(p.TF3)}">${p.TF3}</span>
+
+          <div style="margin-top:10px;font-weight:bold;">
+            ${label}
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+
+    });
+}
+
+setInterval(loadData, 3000);
+loadData();
+</script>
+
+</body>
+</html>
