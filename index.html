@@ -60,7 +60,7 @@ function getClass(tf) {
 }
 
 function loadData() {
-  fetch("https://mt5-dashboard-3uyj.onrender.com/api/signal")
+  fetch("/api/signal")
     .then(res => res.json())
     .then(data => {
 

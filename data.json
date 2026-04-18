@@ -1,0 +1,5 @@
+{
+  "EURUSD": { "TF1": "LONG", "TF2": "LONG", "TF3": "LONG" },
+  "AUDUSD": { "TF1": "SHORT", "TF2": "SHORT", "TF3": "SHORT" },
+  "GBPUSD": { "TF1": "LONG", "TF2": "SHORT", "TF3": "NEUTRAL" }
+}
