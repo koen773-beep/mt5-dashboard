@@ -43,19 +43,28 @@
 
     /* 👇 dropdown styling (clean & pro) */
     .tf-select {
-      width: 100%;
-      padding: 4px;
-      font-size: 12px;
-      border-radius: 5px;
-      border: 1px solid #334155;
-      background: #0f172a;
-      color: white;
-      text-align: center;
-      appearance: none;
+        width: 100%;
+	  padding: 4px 20px 4px 6px;
+	  border-radius: 5px;
+	  border: none;
+	  background: #334155;
+	  color: white;
+	  font-size: 12px;
+	  text-align: center;
+
+	  appearance: none; /* ❗ verwijdert standaard pijltje */
+	  -webkit-appearance: none;
+	  -moz-appearance: none;
+
+	  background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='10' viewBox='0 0 20 20' width='10' xmlns='http://www.w3.org/2000/svg'><path d='M5 7l5 5 5-5z'/></svg>");
+	  background-repeat: no-repeat;
+	  background-position: right 6px center;
+	  background-size: 10px;
     }
 
     .tf-select:hover {
       border-color: #64748b;
+	  cursor: pointer;
     }
 
     .badge {
