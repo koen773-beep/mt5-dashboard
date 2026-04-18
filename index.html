@@ -40,20 +40,6 @@
       font-size: 12px;
       display: inline-block;
     }
-	.timeframes {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 5px;
-    font-size: 12px;
-    opacity: 0.7;
-	font-weight: bold;
-    color: #aaa;
-	}
-
-	.timeframes span {
-		width: 33%;
-		text-align: center;
-	}
 
     .buy { background: #22c55e; }
     .sell { background: #ef4444; }
@@ -101,20 +87,16 @@ function loadData() {
         card.className = "card " + trendClass;
 
         card.innerHTML = `
-			<h2>${symbol}</h2>
+          <b>${symbol}</b><br><br>
 
-			<div class="timeframes">
-				<span>D1</span>
-				<span>H4</span>
-				<span>H1</span>
-			</div>
+          <span class="badge ${getClass(p.TF1)}">${p.TF1}</span>
+          <span class="badge ${getClass(p.TF2)}">${p.TF2}</span>
+          <span class="badge ${getClass(p.TF3)}">${p.TF3}</span>
 
-			<div class="badges">
-				<span class="${getClass(data.TF1)}">${data.TF1}</span>
-				<span class="${getClass(data.TF2)}">${data.TF2}</span>
-				<span class="${getClass(data.TF3)}">${data.TF3}</span>
-			</div>
-		`;
+          <div style="margin-top:10px;font-weight:bold;">
+            ${label}
+          </div>
+        `;
 
         grid.appendChild(card);
       });
