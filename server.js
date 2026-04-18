@@ -4,6 +4,7 @@ const path = require("path");
 
 // JSON parsing
 app.use(express.json());
+app.use(express.static(__dirname));
 
 // 🔥 laat static files (zoals index.html) werken
 app.use(express.static(__dirname));
