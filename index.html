@@ -18,7 +18,7 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 15px;
     }
 
@@ -33,13 +33,27 @@
     .short { border: 2px solid #ef4444; }
     .mixed { border: 2px solid #64748b; }
 
-    .badge {
-      padding: 3px 6px;
-      margin: 2px;
-      border-radius: 5px;
+	.tf-grid {
+	  display: grid;
+	  grid-template-columns: repeat(3, 1fr);
+	  text-align: center;
+	  gap: 6px;
+	  margin: 10px 0;
+	}
+
+    .tf-grid span:nth-child(-n+3) {
       font-size: 12px;
-      display: inline-block;
+      opacity: 0.6;
     }
+
+	.badge {
+	  padding: 4px 6px;
+	  border-radius: 5px;
+	  font-size: 12px;
+	  display: inline-block;
+	  width: 100%;           /* 👈 dit is de fix */
+	  box-sizing: border-box; /* 👈 voorkomt overflow */
+	}
 
     .buy { background: #22c55e; }
     .sell { background: #ef4444; }
@@ -60,16 +74,26 @@ function getClass(tf) {
 }
 
 function loadData() {
-  const API_URL = window.location.hostname === "localhost"
-    ? "/data.json"
-    : "/api/signal";
+
+	const API_URL = window.location.hostname === "localhost"
+	  ? "/data.json"
+	  : "./data.json";
 
   fetch(API_URL)
     .then(res => res.json())
     .then(data => {
 
       const grid = document.getElementById("grid");
+
+      if (!grid) return;
+
       grid.innerHTML = "";
+
+      // 🔥 fallback als geen data
+      if (!data || Object.keys(data).length === 0) {
+        grid.innerHTML = "<p>Geen data beschikbaar...</p>";
+        return;
+      }
 
       Object.keys(data).forEach(symbol => {
         const p = data[symbol];
@@ -81,7 +105,7 @@ function loadData() {
           if (p.TF1 === "LONG") {
             trendClass = "long";
             label = "STRONG BUY";
-          } else {
+          } else if (p.TF1 === "SHORT") {
             trendClass = "short";
             label = "STRONG SELL";
           }
@@ -91,11 +115,17 @@ function loadData() {
         card.className = "card " + trendClass;
 
         card.innerHTML = `
-          <b>${symbol}</b><br><br>
+          <b>${symbol}</b>
 
-          <span class="badge ${getClass(p.TF1)}">${p.TF1}</span>
-          <span class="badge ${getClass(p.TF2)}">${p.TF2}</span>
-          <span class="badge ${getClass(p.TF3)}">${p.TF3}</span>
+          <div class="tf-grid">
+            <span>D1</span>
+            <span>H4</span>
+            <span>H1</span>
+
+            <span class="badge ${getClass(p.TF1)}">${p.TF1}</span>
+            <span class="badge ${getClass(p.TF2)}">${p.TF2}</span>
+            <span class="badge ${getClass(p.TF3)}">${p.TF3}</span>
+          </div>
 
           <div style="margin-top:10px;font-weight:bold;">
             ${label}
@@ -105,11 +135,17 @@ function loadData() {
         grid.appendChild(card);
       });
 
+    })
+    .catch(err => {
+      console.error("Fetch error:", err);
+      document.getElementById("grid").innerHTML = "<p>Fout bij laden data...</p>";
     });
 }
 
-setInterval(loadData, 3000);
-loadData();
+document.addEventListener("DOMContentLoaded", function () {
+  loadData();
+  setInterval(loadData, 3000);
+});
 </script>
 
 </body>
