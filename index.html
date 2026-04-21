@@ -173,9 +173,10 @@ document.addEventListener("change", function(e) {
     selectedTF[symbol][tfKey] = e.target.value;
 
     // 🔥 alle 3 ophalen
-	const tf1 = selectedTF[symbol]?.TF1 || p.TF1;
-    const tf2 = selectedTF[symbol]?.TF1 || p.TF2;
-	const tf3 = selectedTF[symbol]?.TF1 || p.TF3;
+    const tf1 = selectedTF[symbol].TF1 || "D1";
+    const tf2 = selectedTF[symbol].TF2 || "H4";
+    const tf3 = selectedTF[symbol].TF3 || "H1";
+
     // 🔥 scan triggeren
     fetch("/api/scan", {
       method: "POST",
