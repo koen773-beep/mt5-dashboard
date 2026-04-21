@@ -13,7 +13,27 @@
 
     h1 {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 10px;
+    }
+
+    /* 🔥 toggle knop */
+    .topbar {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .toggle-btn {
+      background: #334155;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .toggle-btn:hover {
+      background: #475569;
     }
 
     .grid {
@@ -36,7 +56,6 @@
     .tf-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      text-align: center;
       gap: 6px;
       margin: 10px 0;
     }
@@ -52,10 +71,7 @@
       text-align: center;
 
       appearance: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-
-      background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='10' viewBox='0 0 20 20' width='10' xmlns='http://www.w3.org/2000/svg'><path d='M5 7l5 5 5-5z'/></svg>");
+      background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='10' viewBox='0 0 20 20' width='10'><path d='M5 7l5 5 5-5z'/></svg>");
       background-repeat: no-repeat;
       background-position: right 6px center;
       background-size: 10px;
@@ -70,7 +86,6 @@
       padding: 4px 6px;
       border-radius: 5px;
       font-size: 12px;
-      display: inline-block;
       width: 100%;
       box-sizing: border-box;
     }
@@ -89,12 +104,31 @@
 <body>
 
 <h1>📊 Forex Trend Dashboard</h1>
+
+<div class="topbar">
+  <button class="toggle-btn" onclick="toggleMode()" id="modeBtn">
+    Gebruik LIVE data
+  </button>
+</div>
+
 <div class="grid" id="grid"></div>
 
 <script>
 
+// 🔥 mode toggle
+let useLiveData = false;
+
 // 🔥 bewaart gekozen timeframes
 let selectedTF = {};
+
+function toggleMode() {
+  useLiveData = !useLiveData;
+
+  document.getElementById("modeBtn").innerText =
+    useLiveData ? "Gebruik TEST data" : "Gebruik LIVE data";
+
+  loadData();
+}
 
 function getClass(tf) {
   if (tf === "LONG") return "buy";
@@ -102,7 +136,7 @@ function getClass(tf) {
   return "neutral";
 }
 
-// 🔥 luister naar dropdown wijzigingen
+// 🔥 dropdown listener
 document.addEventListener("change", function(e) {
   if (e.target.classList.contains("tf-select")) {
     const symbol = e.target.dataset.symbol;
@@ -115,9 +149,9 @@ document.addEventListener("change", function(e) {
 
 function loadData() {
 
-	const API_URL = window.location.hostname === "localhost"
-	  ? "/data.json"
-	  : "/api/signal";
+  const API_URL = useLiveData
+    ? "https://mt5-dashboard-3uyj.onrender.com/api/signal"
+    : "/data.json";
 
   fetch(API_URL)
     .then(res => res.json())
@@ -136,19 +170,22 @@ function loadData() {
       Object.keys(data).forEach(symbol => {
         const p = data[symbol];
 
-        // 🔥 gebruik opgeslagen values
-        const tf1 = selectedTF[symbol]?.TF1 || p.TF1;
-        const tf2 = selectedTF[symbol]?.TF2 || p.TF2;
-        const tf3 = selectedTF[symbol]?.TF3 || p.TF3;
+        const tf1 = selectedTF[symbol]?.TF1 || "D1";
+        const tf2 = selectedTF[symbol]?.TF2 || "H4";
+        const tf3 = selectedTF[symbol]?.TF3 || "H1";
+
+        const s1 = p.TF1;
+        const s2 = p.TF2;
+        const s3 = p.TF3;
 
         let trendClass = "mixed";
         let label = "MIXED";
 
-        if (tf1 === tf2 && tf2 === tf3) {
-          if (tf1 === "LONG") {
+        if (s1 === s2 && s2 === s3) {
+          if (s1 === "LONG") {
             trendClass = "long";
             label = "STRONG BUY";
-          } else if (tf1 === "SHORT") {
+          } else if (s1 === "SHORT") {
             trendClass = "short";
             label = "STRONG SELL";
           }
@@ -162,7 +199,6 @@ function loadData() {
 
           <div class="tf-grid">
 
-            <!-- SELECTORS -->
             <select class="tf-select" data-symbol="${symbol}" data-tf="TF1">
               <option ${tf1 === "D1" ? "selected" : ""}>D1</option>
               <option ${tf1 === "H4" ? "selected" : ""}>H4</option>
@@ -181,10 +217,9 @@ function loadData() {
               <option ${tf3 === "H1" ? "selected" : ""}>H1</option>
             </select>
 
-            <!-- SIGNALS -->
-            <span class="badge ${getClass(tf1)}">${tf1}</span>
-            <span class="badge ${getClass(tf2)}">${tf2}</span>
-            <span class="badge ${getClass(tf3)}">${tf3}</span>
+            <span class="badge ${getClass(s1)}">${s1}</span>
+            <span class="badge ${getClass(s2)}">${s2}</span>
+            <span class="badge ${getClass(s3)}">${s3}</span>
 
           </div>
 
@@ -207,6 +242,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadData();
   setInterval(loadData, 3000);
 });
+
 </script>
 
 </body>

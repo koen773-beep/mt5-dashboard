@@ -1,10 +1,12 @@
 const express = require("express");
 const app = express();
 const path = require("path");
+const cors = require("cors");
 
 // JSON parsing
 app.use(express.json());
 app.use(express.static(__dirname));
+app.use(cors());
 
 // 🔥 laat static files (zoals index.html) werken
 app.use(express.static(__dirname));
