@@ -115,9 +115,9 @@ document.addEventListener("change", function(e) {
 
 function loadData() {
 
-  const API_URL = window.location.hostname === "localhost"
-    ? "/data.json"
-    : "./data.json";
+	const API_URL = window.location.hostname === "localhost"
+	  ? "/data.json"
+	  : "/api/signal";
 
   fetch(API_URL)
     .then(res => res.json())
