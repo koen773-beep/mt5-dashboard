@@ -274,24 +274,37 @@ function loadData() {
     .then(res => res.json())
     .then(data => {
 
+      const grid = document.getElementById("grid");
+      if (!grid) return;
+
+      // 🔥 ALTijd UI leegmaken (fix voor "Geen data...")
+      grid.innerHTML = "";
+
+      // 🔥 GEEN DATA
       if (!data || Object.keys(data).length === 0) {
-        document.getElementById("grid").innerHTML = "<p>Geen data beschikbaar...</p>";
+        grid.innerHTML = "<p>Geen data beschikbaar...</p>";
         return;
       }
 
+      // 🔥 NIEUW: cards resetten (anders oude blijven hangen)
+      cards = {};
+
       Object.keys(data).forEach(symbol => {
 
-        // 🔥 maak card alleen als hij nog niet bestaat
-        if (!cards[symbol]) {
-          createCard(symbol);
-        }
-
+        // 🔥 altijd opnieuw maken (simpel en stabiel)
+        createCard(symbol);
         updateCard(symbol, data[symbol]);
+
       });
 
     })
     .catch(err => {
       console.error("Fetch error:", err);
+
+      const grid = document.getElementById("grid");
+      if (grid) {
+        grid.innerHTML = "<p>Fout bij laden data...</p>";
+      }
     });
 }
 
