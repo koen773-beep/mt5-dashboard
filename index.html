@@ -164,15 +164,19 @@ function triggerScan(symbol) {
 // 🔥 dropdown listener
 document.addEventListener("change", function(e) {
   if (e.target.classList.contains("tf-select")) {
+
     const symbol = e.target.dataset.symbol;
+    const tfKey = e.target.dataset.tf;
 
-    const selects = document.querySelectorAll(`select[data-symbol='${symbol}']`);
+    // 🔥 opslaan!
+    if (!selectedTF[symbol]) selectedTF[symbol] = {};
+    selectedTF[symbol][tfKey] = e.target.value;
 
-    const tf1 = selects[0].value;
-    const tf2 = selects[1].value;
-    const tf3 = selects[2].value;
-
-    // 🔥 stuur scan request naar server
+    // 🔥 alle 3 ophalen
+	const tf1 = selectedTF[symbol]?.TF1 || p.TF1;
+    const tf2 = selectedTF[symbol]?.TF1 || p.TF2;
+	const tf3 = selectedTF[symbol]?.TF1 || p.TF3;
+    // 🔥 scan triggeren
     fetch("/api/scan", {
       method: "POST",
       headers: {
@@ -185,6 +189,7 @@ document.addEventListener("change", function(e) {
         tf3: tf3
       })
     });
+
   }
 });
 
