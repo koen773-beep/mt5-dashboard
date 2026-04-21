@@ -12,7 +12,20 @@ let latestScanRequest = {};
 
 // ✅ API ROUTES EERST
 app.post("/api/signal", (req, res) => {
-    const data = req.body;
+
+    let data = req.body;
+
+    // 🔥 FIX: force JSON parse als string
+    if (typeof data === "string") {
+        try {
+            data = JSON.parse(data);
+        } catch (e) {
+            console.log("❌ JSON parse error:", data);
+            return res.sendStatus(400);
+        }
+    }
+
+    console.log("📥 RAW DATA:", data);
 
     if (Array.isArray(data)) {
         data.forEach(p => {
@@ -23,6 +36,10 @@ app.post("/api/signal", (req, res) => {
                 time: new Date()
             };
         });
+
+        console.log("✅ Signals updated:", Object.keys(signals).length);
+    } else {
+        console.log("❌ Not an array:", data);
     }
 
     res.send("OK");
@@ -47,18 +64,20 @@ app.get("/api/scan", (req, res) => {
     console.log("📤 Sending scan:", latestScanRequest);
 
     res.json(latestScanRequest);
+
+    // 🔥 reset zodat MT5 alleen nieuwe requests krijgt
     latestScanRequest = {};
 });
 
-// ❗ PAS HIER STATIC
+// ❗ STATIC NA API
 app.use(express.static(__dirname));
 
-// homepage fallback
+// homepage
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log("Server running on port", PORT);
+    console.log("🚀 Server running on port", PORT);
 });
