@@ -3,22 +3,15 @@ const app = express();
 const path = require("path");
 const cors = require("cors");
 
-// JSON parsing
 app.use(express.json());
 app.use(cors());
 
-// static files
-app.use(express.static(__dirname));
-
-// opslag van signals
+// opslag
 let signals = {};
-
-// 🔥 opslag van scan requests
 let latestScanRequest = {};
 
-// 📥 MT5 stuurt data hierheen
+// ✅ API ROUTES EERST
 app.post("/api/signal", (req, res) => {
-
     const data = req.body;
 
     if (Array.isArray(data)) {
@@ -30,47 +23,42 @@ app.post("/api/signal", (req, res) => {
                 time: new Date()
             };
         });
-
-        console.log("📥 Batch received:", data.length);
     }
 
     res.send("OK");
 });
 
-// 📤 Website haalt data hier op
-app.get("/api/scan", (req, res) => {
-    res.json(latestScanRequest);
-
-    // 🔥 reset na ophalen (BELANGRIJK)
-    latestScanRequest = {};
+app.get("/api/signal", (req, res) => {
+    console.log("🔥 API SIGNAL HIT");
+    res.json(signals);
 });
 
-// 🔥 NIEUW: frontend stuurt scan request
 app.post("/api/scan", (req, res) => {
     const { symbol, tf1, tf2, tf3 } = req.body;
 
-    console.log("📊 Scan request:", symbol, tf1, tf2, tf3);
-	console.log("📤 Sending scan to MT5:", latestScanRequest);
-
     latestScanRequest[symbol] = { tf1, tf2, tf3 };
+
+    console.log("📥 Scan request:", latestScanRequest);
 
     res.json({ status: "ok" });
 });
 
-// 🔥 NIEUW: MT5 haalt scan requests op
 app.get("/api/scan", (req, res) => {
+    console.log("📤 Sending scan:", latestScanRequest);
+
     res.json(latestScanRequest);
+    latestScanRequest = {};
 });
 
-// homepage
+// ❗ PAS HIER STATIC
+app.use(express.static(__dirname));
+
+// homepage fallback
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// start server
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log("Server running on port", PORT);
 });
-
