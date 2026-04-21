@@ -5,14 +5,16 @@ const cors = require("cors");
 
 // JSON parsing
 app.use(express.json());
-app.use(express.static(__dirname));
 app.use(cors());
 
-// 🔥 laat static files (zoals index.html) werken
+// static files
 app.use(express.static(__dirname));
 
 // opslag van signals
 let signals = {};
+
+// 🔥 opslag van scan requests
+let latestScanRequest = {};
 
 // 📥 MT5 stuurt data hierheen
 app.post("/api/signal", (req, res) => {
@@ -40,7 +42,23 @@ app.get("/api/signal", (req, res) => {
     res.json(signals);
 });
 
-// 🔥 homepage = jouw dashboard
+// 🔥 NIEUW: frontend stuurt scan request
+app.post("/api/scan", (req, res) => {
+    const { symbol, tf1, tf2, tf3 } = req.body;
+
+    console.log("📊 Scan request:", symbol, tf1, tf2, tf3);
+
+    latestScanRequest[symbol] = { tf1, tf2, tf3 };
+
+    res.json({ status: "ok" });
+});
+
+// 🔥 NIEUW: MT5 haalt scan requests op
+app.get("/api/scan", (req, res) => {
+    res.json(latestScanRequest);
+});
+
+// homepage
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });

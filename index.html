@@ -136,14 +136,43 @@ function getClass(tf) {
   return "neutral";
 }
 
+function triggerScan(symbol) {
+
+  const tf1 = selectedTF[symbol]?.TF1 || "D1";
+  const tf2 = selectedTF[symbol]?.TF2 || "H4";
+  const tf3 = selectedTF[symbol]?.TF3 || "H1";
+
+  fetch("https://mt5-dashboard-3uyj.onrender.com/api/scan", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      symbol: symbol,
+      tf1: tf1,
+      tf2: tf2,
+      tf3: tf3
+    })
+  })
+  .then(() => {
+    // 🔥 kleine delay zodat MT5 kan reageren
+    setTimeout(loadData, 1000);
+  })
+  .catch(err => console.error("Scan error:", err));
+}
+
 // 🔥 dropdown listener
 document.addEventListener("change", function(e) {
   if (e.target.classList.contains("tf-select")) {
     const symbol = e.target.dataset.symbol;
     const tf = e.target.dataset.tf;
+    const value = e.target.value;
 
     if (!selectedTF[symbol]) selectedTF[symbol] = {};
-    selectedTF[symbol][tf] = e.target.value;
+    selectedTF[symbol][tf] = value;
+
+    // 🔥 trigger scan
+    triggerScan(symbol);
   }
 });
 
