@@ -38,8 +38,11 @@ app.post("/api/signal", (req, res) => {
 });
 
 // 📤 Website haalt data hier op
-app.get("/api/signal", (req, res) => {
-    res.json(signals);
+app.get("/api/scan", (req, res) => {
+    res.json(latestScanRequest);
+
+    // 🔥 reset na ophalen (BELANGRIJK)
+    latestScanRequest = {};
 });
 
 // 🔥 NIEUW: frontend stuurt scan request
@@ -47,6 +50,7 @@ app.post("/api/scan", (req, res) => {
     const { symbol, tf1, tf2, tf3 } = req.body;
 
     console.log("📊 Scan request:", symbol, tf1, tf2, tf3);
+	console.log("📤 Sending scan to MT5:", latestScanRequest);
 
     latestScanRequest[symbol] = { tf1, tf2, tf3 };
 
@@ -68,3 +72,4 @@ const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
