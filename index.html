@@ -121,6 +121,9 @@ let useLiveData = false;
 // 🔥 bewaart gekozen timeframes
 let selectedTF = {};
 
+// 🔥 bewaart cards zodat we ze niet opnieuw maken
+let cards = {};
+
 function toggleMode() {
   useLiveData = !useLiveData;
 
@@ -136,146 +139,159 @@ function getClass(tf) {
   return "neutral";
 }
 
+// 🔥 scan trigger
 function triggerScan(symbol) {
 
   const tf1 = selectedTF[symbol]?.TF1 || "D1";
   const tf2 = selectedTF[symbol]?.TF2 || "H4";
   const tf3 = selectedTF[symbol]?.TF3 || "H1";
 
-  fetch("https://mt5-dashboard-3uyj.onrender.com/api/scan", {
+  fetch("/api/scan", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      symbol: symbol,
-      tf1: tf1,
-      tf2: tf2,
-      tf3: tf3
-    })
-  })
-  .then(() => {
-    // 🔥 kleine delay zodat MT5 kan reageren
-    setTimeout(loadData, 1000);
-  })
-  .catch(err => console.error("Scan error:", err));
+    body: JSON.stringify({ symbol, tf1, tf2, tf3 })
+  });
+
+  // 🔥 wacht op MT5 update
+  setTimeout(loadData, 1500);
 }
 
-// 🔥 dropdown listener
+// 🔥 dropdown change
 document.addEventListener("change", function(e) {
   if (e.target.classList.contains("tf-select")) {
+
     const symbol = e.target.dataset.symbol;
+    const tfKey = e.target.dataset.tf;
+    const value = e.target.value;
 
-    const selects = document.querySelectorAll(`select[data-symbol='${symbol}']`);
+    // opslaan
+    if (!selectedTF[symbol]) selectedTF[symbol] = {};
+    selectedTF[symbol][tfKey] = value;
 
-    const tf1 = selects[0].value;
-    const tf2 = selects[1].value;
-    const tf3 = selects[2].value;
-
-    // 🔥 stuur scan request naar server
-    fetch("/api/scan", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        symbol: symbol,
-        tf1: tf1,
-        tf2: tf2,
-        tf3: tf3
-      })
-    });
+    // 🔥 DIRECT scan starten
+    triggerScan(symbol);
   }
 });
+
+function createCard(symbol) {
+
+  const card = document.createElement("div");
+  card.className = "card mixed";
+
+  card.innerHTML = `
+    <b>${symbol}</b>
+
+    <div class="tf-grid">
+
+      <select class="tf-select" data-symbol="${symbol}" data-tf="TF1">
+        <option>D1</option>
+        <option>H4</option>
+        <option>H1</option>
+      </select>
+
+      <select class="tf-select" data-symbol="${symbol}" data-tf="TF2">
+        <option>D1</option>
+        <option>H4</option>
+        <option>H1</option>
+      </select>
+
+      <select class="tf-select" data-symbol="${symbol}" data-tf="TF3">
+        <option>D1</option>
+        <option>H4</option>
+        <option>H1</option>
+      </select>
+
+      <span class="badge">-</span>
+      <span class="badge">-</span>
+      <span class="badge">-</span>
+
+    </div>
+
+    <div class="label">MIXED</div>
+  `;
+
+  document.getElementById("grid").appendChild(card);
+
+  cards[symbol] = card;
+}
+
+function updateCard(symbol, data) {
+
+  const card = cards[symbol];
+  if (!card) return;
+
+  const selects = card.querySelectorAll("select");
+  const badges = card.querySelectorAll(".badge");
+  const label = card.querySelector(".label");
+
+  // 🔥 gebruik user keuze of fallback
+  const tf1 = selectedTF[symbol]?.TF1 || "D1";
+  const tf2 = selectedTF[symbol]?.TF2 || "H4";
+  const tf3 = selectedTF[symbol]?.TF3 || "H1";
+
+  selects[0].value = tf1;
+  selects[1].value = tf2;
+  selects[2].value = tf3;
+
+  const s1 = data.TF1;
+  const s2 = data.TF2;
+  const s3 = data.TF3;
+
+  badges[0].innerText = s1;
+  badges[1].innerText = s2;
+  badges[2].innerText = s3;
+
+  badges[0].className = "badge " + getClass(s1);
+  badges[1].className = "badge " + getClass(s2);
+  badges[2].className = "badge " + getClass(s3);
+
+  let trendClass = "mixed";
+  let text = "MIXED";
+
+  if (s1 === s2 && s2 === s3) {
+    if (s1 === "LONG") {
+      trendClass = "long";
+      text = "STRONG BUY";
+    } else if (s1 === "SHORT") {
+      trendClass = "short";
+      text = "STRONG SELL";
+    }
+  }
+
+  card.className = "card " + trendClass;
+  label.innerText = text;
+}
 
 function loadData() {
 
   const API_URL = useLiveData
-    ? "https://mt5-dashboard-3uyj.onrender.com/api/signal"
+    ? "/api/signal"
     : "/data.json";
 
   fetch(API_URL)
     .then(res => res.json())
     .then(data => {
 
-      const grid = document.getElementById("grid");
-      if (!grid) return;
-
-      grid.innerHTML = "";
-
       if (!data || Object.keys(data).length === 0) {
-        grid.innerHTML = "<p>Geen data beschikbaar...</p>";
+        document.getElementById("grid").innerHTML = "<p>Geen data beschikbaar...</p>";
         return;
       }
 
       Object.keys(data).forEach(symbol => {
-        const p = data[symbol];
 
-        const tf1 = selectedTF[symbol]?.TF1 || "D1";
-        const tf2 = selectedTF[symbol]?.TF2 || "H4";
-        const tf3 = selectedTF[symbol]?.TF3 || "H1";
-
-        const s1 = p.TF1;
-        const s2 = p.TF2;
-        const s3 = p.TF3;
-
-        let trendClass = "mixed";
-        let label = "MIXED";
-
-        if (s1 === s2 && s2 === s3) {
-          if (s1 === "LONG") {
-            trendClass = "long";
-            label = "STRONG BUY";
-          } else if (s1 === "SHORT") {
-            trendClass = "short";
-            label = "STRONG SELL";
-          }
+        // 🔥 maak card alleen als hij nog niet bestaat
+        if (!cards[symbol]) {
+          createCard(symbol);
         }
 
-        const card = document.createElement("div");
-        card.className = "card " + trendClass;
-
-        card.innerHTML = `
-          <b>${symbol}</b>
-
-          <div class="tf-grid">
-
-            <select class="tf-select" data-symbol="${symbol}" data-tf="TF1">
-              <option ${tf1 === "D1" ? "selected" : ""}>D1</option>
-              <option ${tf1 === "H4" ? "selected" : ""}>H4</option>
-              <option ${tf1 === "H1" ? "selected" : ""}>H1</option>
-            </select>
-
-            <select class="tf-select" data-symbol="${symbol}" data-tf="TF2">
-              <option ${tf2 === "D1" ? "selected" : ""}>D1</option>
-              <option ${tf2 === "H4" ? "selected" : ""}>H4</option>
-              <option ${tf2 === "H1" ? "selected" : ""}>H1</option>
-            </select>
-
-            <select class="tf-select" data-symbol="${symbol}" data-tf="TF3">
-              <option ${tf3 === "D1" ? "selected" : ""}>D1</option>
-              <option ${tf3 === "H4" ? "selected" : ""}>H4</option>
-              <option ${tf3 === "H1" ? "selected" : ""}>H1</option>
-            </select>
-
-            <span class="badge ${getClass(s1)}">${s1}</span>
-            <span class="badge ${getClass(s2)}">${s2}</span>
-            <span class="badge ${getClass(s3)}">${s3}</span>
-
-          </div>
-
-          <div class="label">
-            ${label}
-          </div>
-        `;
-
-        grid.appendChild(card);
+        updateCard(symbol, data[symbol]);
       });
 
     })
     .catch(err => {
       console.error("Fetch error:", err);
-      document.getElementById("grid").innerHTML = "<p>Fout bij laden data...</p>";
     });
 }
 
