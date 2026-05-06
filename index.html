@@ -153,9 +153,7 @@ document.addEventListener("change", function(e) {
     if (!selectedTF[symbol]) selectedTF[symbol] = {};
     selectedTF[symbol][tfKey] = value;
 
-    if (latestData[symbol]) {
-      updateCard(symbol, latestData[symbol]);
-    }
+    updateCard(symbol, latestData[symbol]);
   }
 });
 
@@ -263,27 +261,27 @@ function loadData() {
       const grid = document.getElementById("grid");
       if (!grid) return;
 
+      grid.innerHTML = "";
+
       if (!data || Object.keys(data).length === 0) {
-        if (Object.keys(cards).length === 0) {
-          grid.innerHTML = "<p>Geen data beschikbaar...</p>";
-        }
+        grid.innerHTML = "<p>Geen data beschikbaar...</p>";
         return;
       }
 
-      if (grid.innerHTML.includes("Geen data beschikbaar")) {
-        grid.innerHTML = "";
-      }
+      cards = {};
 
       Object.keys(data).forEach(symbol => {
-        if (!cards[symbol]) {
-          createCard(symbol);
-        }
-
+        createCard(symbol);
         updateCard(symbol, data[symbol]);
       });
     })
     .catch(err => {
       console.error("Fetch error:", err);
+
+      const grid = document.getElementById("grid");
+      if (grid) {
+        grid.innerHTML = "<p>Fout bij laden data...</p>";
+      }
     });
 }
 
