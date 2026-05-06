@@ -16,7 +16,6 @@
       margin-bottom: 10px;
     }
 
-    /* 🔥 toggle knop */
     .topbar {
       text-align: center;
       margin-bottom: 20px;
@@ -38,7 +37,7 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 15px;
     }
 
@@ -69,7 +68,6 @@
       color: white;
       font-size: 12px;
       text-align: center;
-
       appearance: none;
       background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='10' viewBox='0 0 20 20' width='10'><path d='M5 7l5 5 5-5z'/></svg>");
       background-repeat: no-repeat;
@@ -114,15 +112,16 @@
 <div class="grid" id="grid"></div>
 
 <script>
-
-// 🔥 mode toggle
 let useLiveData = false;
-
-// 🔥 bewaart gekozen timeframes
 let selectedTF = {};
-
-// 🔥 bewaart cards zodat we ze niet opnieuw maken
 let cards = {};
+
+const TIMEFRAMES = ["D1", "H4", "H1", "M30", "M15", "M5", "M1"];
+
+// Zet hier eventueel je Render URL neer als je lokaal live data wilt ophalen
+// Voorbeeld:
+// const API_BASE_URL = "https://jouw-app.onrender.com";
+const API_BASE_URL = "";
 
 function toggleMode() {
   useLiveData = !useLiveData;
@@ -139,43 +138,49 @@ function getClass(tf) {
   return "neutral";
 }
 
-// 🔥 scan trigger
-function triggerScan(symbol) {
+function timeframeOptions(selectedValue) {
+  return TIMEFRAMES.map(tf => {
+    return `<option value="${tf}" ${tf === selectedValue ? "selected" : ""}>${tf}</option>`;
+  }).join("");
+}
 
+function triggerScan(symbol) {
   const tf1 = selectedTF[symbol]?.TF1 || "D1";
   const tf2 = selectedTF[symbol]?.TF2 || "H4";
   const tf3 = selectedTF[symbol]?.TF3 || "H1";
 
-  fetch("/api/scan", {
+  fetch(`${API_BASE_URL}/api/scan`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({ symbol, tf1, tf2, tf3 })
+  })
+  .then(() => {
+    setTimeout(loadData, 1500);
+  })
+  .catch(err => {
+    console.error("Scan error:", err);
   });
-
-  // 🔥 wacht op MT5 update
-  setTimeout(loadData, 1500);
 }
 
-// 🔥 dropdown change
 document.addEventListener("change", function(e) {
   if (e.target.classList.contains("tf-select")) {
-
     const symbol = e.target.dataset.symbol;
     const tfKey = e.target.dataset.tf;
     const value = e.target.value;
 
-    // opslaan
     if (!selectedTF[symbol]) selectedTF[symbol] = {};
     selectedTF[symbol][tfKey] = value;
 
-    // 🔥 DIRECT scan starten
     triggerScan(symbol);
   }
 });
 
 function createCard(symbol) {
+  const tf1 = selectedTF[symbol]?.TF1 || "D1";
+  const tf2 = selectedTF[symbol]?.TF2 || "H4";
+  const tf3 = selectedTF[symbol]?.TF3 || "H1";
 
   const card = document.createElement("div");
   card.className = "card mixed";
@@ -184,60 +189,40 @@ function createCard(symbol) {
     <b>${symbol}</b>
 
     <div class="tf-grid">
-
       <select class="tf-select" data-symbol="${symbol}" data-tf="TF1">
-        <option>D1</option>
-        <option>H4</option>
-        <option>H1</option>
+        ${timeframeOptions(tf1)}
       </select>
 
       <select class="tf-select" data-symbol="${symbol}" data-tf="TF2">
-        <option>D1</option>
-        <option>H4</option>
-        <option>H1</option>
+        ${timeframeOptions(tf2)}
       </select>
 
       <select class="tf-select" data-symbol="${symbol}" data-tf="TF3">
-        <option>D1</option>
-        <option>H4</option>
-        <option>H1</option>
+        ${timeframeOptions(tf3)}
       </select>
 
       <span class="badge">-</span>
       <span class="badge">-</span>
       <span class="badge">-</span>
-
     </div>
 
     <div class="label">MIXED</div>
   `;
 
   document.getElementById("grid").appendChild(card);
-
   cards[symbol] = card;
 }
 
 function updateCard(symbol, data) {
-
   const card = cards[symbol];
   if (!card) return;
 
-  const selects = card.querySelectorAll("select");
   const badges = card.querySelectorAll(".badge");
   const label = card.querySelector(".label");
 
-  // 🔥 gebruik user keuze of fallback
-  const tf1 = selectedTF[symbol]?.TF1 || "D1";
-  const tf2 = selectedTF[symbol]?.TF2 || "H4";
-  const tf3 = selectedTF[symbol]?.TF3 || "H1";
-
-  selects[0].value = tf1;
-  selects[1].value = tf2;
-  selects[2].value = tf3;
-
-  const s1 = data.TF1;
-  const s2 = data.TF2;
-  const s3 = data.TF3;
+  const s1 = data.TF1 || "NEUTRAL";
+  const s2 = data.TF2 || "NEUTRAL";
+  const s3 = data.TF3 || "NEUTRAL";
 
   badges[0].innerText = s1;
   badges[1].innerText = s2;
@@ -265,38 +250,29 @@ function updateCard(symbol, data) {
 }
 
 function loadData() {
-
   const API_URL = useLiveData
-    ? "/api/signal"
+    ? `${API_BASE_URL}/api/signal`
     : "/data.json";
 
   fetch(API_URL)
     .then(res => res.json())
     .then(data => {
-
       const grid = document.getElementById("grid");
       if (!grid) return;
 
-      // 🔥 ALTijd UI leegmaken (fix voor "Geen data...")
       grid.innerHTML = "";
 
-      // 🔥 GEEN DATA
       if (!data || Object.keys(data).length === 0) {
         grid.innerHTML = "<p>Geen data beschikbaar...</p>";
         return;
       }
 
-      // 🔥 NIEUW: cards resetten (anders oude blijven hangen)
       cards = {};
 
       Object.keys(data).forEach(symbol => {
-
-        // 🔥 altijd opnieuw maken (simpel en stabiel)
         createCard(symbol);
         updateCard(symbol, data[symbol]);
-
       });
-
     })
     .catch(err => {
       console.error("Fetch error:", err);
@@ -312,7 +288,6 @@ document.addEventListener("DOMContentLoaded", function () {
   loadData();
   setInterval(loadData, 3000);
 });
-
 </script>
 
 </body>
