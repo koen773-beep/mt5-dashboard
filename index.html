@@ -115,12 +115,12 @@
 let useLiveData = false;
 let selectedTF = {};
 let cards = {};
-let latestData = {};
 
 const TIMEFRAMES = ["D1", "H4", "H1", "M30", "M15", "M5", "M1"];
 
-// Voor lokaal live data ophalen vanaf Render:
-// const API_BASE_URL = "https://mt5-dashboard-3uyj.onrender.com";
+// Zet hier eventueel je Render URL neer als je lokaal live data wilt ophalen
+// Voorbeeld:
+// const API_BASE_URL = "https://jouw-app.onrender.com";
 const API_BASE_URL = "";
 
 function toggleMode() {
@@ -132,9 +132,9 @@ function toggleMode() {
   loadData();
 }
 
-function getClass(signal) {
-  if (signal === "LONG") return "buy";
-  if (signal === "SHORT") return "sell";
+function getClass(tf) {
+  if (tf === "LONG") return "buy";
+  if (tf === "SHORT") return "sell";
   return "neutral";
 }
 
@@ -142,6 +142,34 @@ function timeframeOptions(selectedValue) {
   return TIMEFRAMES.map(tf => {
     return `<option value="${tf}" ${tf === selectedValue ? "selected" : ""}>${tf}</option>`;
   }).join("");
+}
+
+async function triggerScan(symbol) {
+  const tf1 = selectedTF[symbol]?.TF1 || "D1";
+  const tf2 = selectedTF[symbol]?.TF2 || "H4";
+  const tf3 = selectedTF[symbol]?.TF3 || "H1";
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/scan`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ symbol, tf1, tf2, tf3 })
+    });
+
+    const result = await res.json();
+
+    if (cards[symbol]) {
+      updateCard(symbol, result);
+    } else {
+      loadData();
+    }
+
+  } catch (err) {
+    console.error("Scan error:", err);
+    loadData();
+  }
 }
 
 document.addEventListener("change", function(e) {
@@ -153,7 +181,7 @@ document.addEventListener("change", function(e) {
     if (!selectedTF[symbol]) selectedTF[symbol] = {};
     selectedTF[symbol][tfKey] = value;
 
-    updateCard(symbol, latestData[symbol]);
+    triggerScan(symbol);
   }
 });
 
@@ -195,18 +223,14 @@ function createCard(symbol) {
 
 function updateCard(symbol, data) {
   const card = cards[symbol];
-  if (!card || !data) return;
+  if (!card) return;
 
   const badges = card.querySelectorAll(".badge");
   const label = card.querySelector(".label");
 
-  const tf1 = selectedTF[symbol]?.TF1 || "D1";
-  const tf2 = selectedTF[symbol]?.TF2 || "H4";
-  const tf3 = selectedTF[symbol]?.TF3 || "H1";
-
-  const s1 = data[tf1] || "NEUTRAL";
-  const s2 = data[tf2] || "NEUTRAL";
-  const s3 = data[tf3] || "NEUTRAL";
+  const s1 = data.TF1 || "NEUTRAL";
+  const s2 = data.TF2 || "NEUTRAL";
+  const s3 = data.TF3 || "NEUTRAL";
 
   badges[0].innerText = s1;
   badges[1].innerText = s2;
@@ -233,20 +257,6 @@ function updateCard(symbol, data) {
   label.innerText = text;
 }
 
-function normalizeData(data) {
-  if (Array.isArray(data)) {
-    const obj = {};
-    data.forEach(item => {
-      if (item.symbol) {
-        obj[item.symbol] = item;
-      }
-    });
-    return obj;
-  }
-
-  return data || {};
-}
-
 function loadData() {
   const API_URL = useLiveData
     ? `${API_BASE_URL}/api/signal`
@@ -254,10 +264,7 @@ function loadData() {
 
   fetch(API_URL)
     .then(res => res.json())
-    .then(rawData => {
-      const data = normalizeData(rawData);
-      latestData = data;
-
+    .then(data => {
       const grid = document.getElementById("grid");
       if (!grid) return;
 
@@ -287,7 +294,7 @@ function loadData() {
 
 document.addEventListener("DOMContentLoaded", function () {
   loadData();
-  setInterval(loadData, 1000);
+  setInterval(loadData, 3000);
 });
 </script>
 
